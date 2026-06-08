@@ -4,9 +4,49 @@ const CLIENT_ID =
 const SCOPES =
   "https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/userinfo.profile";
 
+const CHANNEL_ID = "UCAtGANLX7I5N4wOBLH8Yq8Q";
+const LIVE_STREAM_POLL_MS = 5000;
+
 let accessToken = "";
 
 let tokenClient;
+
+async function findLiveVideoIdForChannel() {
+  if (CHANNEL_ID === "PASTE_CHANNEL_ID_HERE") {
+    throw new Error("Add the YouTube channel ID to CHANNEL_ID in main.js.");
+  }
+
+  const params = new URLSearchParams({
+    part: "snippet",
+    channelId: CHANNEL_ID,
+    eventType: "live",
+    type: "video",
+    maxResults: "1",
+  });
+
+  const response = await fetch(
+    `https://www.googleapis.com/youtube/v3/search?${params}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error?.message || "Unable to search for live streams.");
+  }
+
+  const videoId = data.items?.[0]?.id?.videoId;
+
+  if (!videoId) {
+    throw new Error("No live video found on that channel right now.");
+  }
+
+  return videoId;
+}
 
 async function getLiveChatId(videoId) {
 
@@ -101,8 +141,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const paragraphHighlight = document.getElementById("paragraphHighlight");
   const splitButton = document.getElementById("splitButton");
   const outputDiv = document.getElementById("output");
-  const videoInput = document.getElementById("videoInput");
   const loadStreamBtn = document.getElementById("loadStreamBtn");
+  const streamStatus = document.getElementById("streamStatus");
   const loginBtn = document.getElementById("loginBtn");
   const loginStatus = document.getElementById("loginStatus");
   const profilePic = document.getElementById("profilePic");
@@ -122,6 +162,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentVideoId = null;
   let currentLiveChatId = null;
   let isSendingToYoutube = false;
+  let isFindingLiveStream = false;
+  let liveStreamPollId = null;
   
 
   function initGoogleTokenClient(showError = false) {
@@ -193,6 +235,80 @@ document.addEventListener("DOMContentLoaded", () => {
     profilePic.hidden = false;
   }
 
+  function setStreamStatus(text) {
+    if (streamStatus) {
+      streamStatus.textContent = text;
+    }
+  }
+
+  function loadVideoFrames(videoId) {
+    if (currentVideoId === videoId) {
+      return;
+    }
+
+    currentVideoId = videoId;
+    currentLiveChatId = null;
+    videoFrame.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+    chatFrame.src = `https://www.youtube.com/live_chat?is_popout=1&v=${videoId}&embed_domain=${window.location.hostname}`;
+    setStreamStatus("Live stream loaded");
+    stopLiveStreamPolling();
+  }
+
+  function stopLiveStreamPolling() {
+    if (!liveStreamPollId) {
+      return;
+    }
+
+    clearInterval(liveStreamPollId);
+    liveStreamPollId = null;
+  }
+
+  function startLiveStreamPolling() {
+    if (liveStreamPollId || currentVideoId || !accessToken) {
+      return;
+    }
+
+    setStreamStatus("Watching for live stream...");
+    liveStreamPollId = setInterval(() => {
+      findAndLoadLiveStream();
+    }, LIVE_STREAM_POLL_MS);
+    findAndLoadLiveStream();
+  }
+
+  async function findAndLoadLiveStream({ showAlert = false } = {}) {
+    if (currentVideoId || isFindingLiveStream) {
+      return currentVideoId;
+    }
+
+    if (!accessToken) {
+      const message = "Please log in with Google before finding the live stream.";
+      if (showAlert) {
+        alert(message);
+      }
+      throw new Error(message);
+    }
+
+    try {
+      isFindingLiveStream = true;
+      loadStreamBtn.disabled = true;
+      setStreamStatus("Looking for live stream...");
+      const videoId = await findLiveVideoIdForChannel();
+      loadVideoFrames(videoId);
+      return videoId;
+    } catch (error) {
+      setStreamStatus("No live stream found yet");
+
+      if (showAlert) {
+        alert(error.message || "Unable to find a live stream on that channel.");
+      }
+
+      return "";
+    } finally {
+      isFindingLiveStream = false;
+      loadStreamBtn.disabled = false;
+    }
+  }
+
   function setYoutubeSending(isSending, message = "Sending to YouTube...") {
     isSendingToYoutube = isSending;
 
@@ -236,6 +352,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setProfilePic("");
       }
       loginBtn.hidden = true;
+      startLiveStreamPolling();
 
       // Reply/mention features removed: no fetching of recent messages for authors
     } catch (error) {
@@ -243,46 +360,71 @@ document.addEventListener("DOMContentLoaded", () => {
       setLoginStatus("Logged in");
       setProfilePic("");
       loginBtn.hidden = true;
+      startLiveStreamPolling();
     }
   }
 
   function splitTextTightly(text) {
-    const words = text.split(/\s+/);
+    const normalized = text.trim().replace(/\s+/g, " ");
+
+    if (normalized.length <= MAX_CHARS) {
+      return [normalized];
+    }
+
+    let totalGuess = Math.ceil(normalized.length / MAX_CHARS);
+    let parts = [];
+
+    while (true) {
+      parts = splitIntoParts(normalized, totalGuess);
+
+      if (parts.length === totalGuess) {
+        break;
+      }
+
+      totalGuess = parts.length;
+    }
+
+    return parts.map((part, index) => `[Part ${index + 1} of ${parts.length}] ${part}`);
+  }
+
+  function splitIntoParts(text, totalGuess) {
+    const words = text.split(" ");
     const parts = [];
-    let i = 0;
+    let wordIndex = 0;
 
-    while (i < words.length) {
-      const partWords = [];
+    while (wordIndex < words.length) {
       const partNumber = parts.length + 1;
-      const label = `[Part ${partNumber} of ???] `;
-      let len = label.length;
+      const prefixLength = `[Part ${partNumber} of ${totalGuess}] `.length;
+      const maxPartLength = Math.max(1, MAX_CHARS - prefixLength);
+      let part = "";
 
-      while (i < words.length) {
-        const word = words[i];
-        const space = partWords.length > 0 ? 1 : 0;
+      while (wordIndex < words.length) {
+        const word = words[wordIndex];
+        const separator = part ? " " : "";
+        const nextLength = part.length + separator.length + word.length;
 
-        if (len + word.length + space <= MAX_CHARS) {
-          partWords.push(word);
-          len += word.length + space;
-          i++;
-        } else {
-          break;
+        if (nextLength <= maxPartLength) {
+          part += `${separator}${word}`;
+          wordIndex++;
+          continue;
         }
+
+        if (!part) {
+          part = word.slice(0, maxPartLength);
+          words[wordIndex] = word.slice(maxPartLength);
+
+          if (!words[wordIndex]) {
+            wordIndex++;
+          }
+        }
+
+        break;
       }
 
-      if (partWords.length === 0 && i < words.length) {
-        partWords.push(words[i]);
-        i++;
-      }
-
-      parts.push(partWords.join(" "));
+      parts.push(part);
     }
 
-    const totalParts = parts.length;
-    if (totalParts === 1) {
-      return parts;
-    }
-    return parts.map((part, index) => `[Part ${index + 1} of ${totalParts}] ${part}`);
+    return parts;
   }
 
   function displayParts(parts) {
@@ -341,22 +483,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function getYouTubeVideoId(input) {
-    const trimmed = input.trim();
-    if (!trimmed) return "";
+  function clearParagraphAndParts() {
+    paragraphInput.value = "";
+    outputDiv.innerHTML = "";
+    currentParts = [];
+    cachedSelectionText = "";
+    cachedSelectionRange = null;
+    hideSelectionToolbar();
+    updateParagraphHighlight();
+  }
 
-    const urlPatterns = [
-      /(?:v=|youtu\.be\/|youtube\.com\/watch\?v=|youtube\.com\/shorts\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/,
-    ];
-
-    for (const pattern of urlPatterns) {
-      const match = trimmed.match(pattern);
-      if (match && match[1]) {
-        return match[1];
-      }
+  async function ensureLiveStreamLoaded() {
+    if (currentVideoId) {
+      return currentVideoId;
     }
 
-    return trimmed;
+    if (!accessToken) {
+      throw new Error("Please log in with Google before finding the live stream.");
+    }
+
+    const videoId = await findAndLoadLiveStream();
+    if (!videoId) {
+      throw new Error("No live video found on that channel right now.");
+    }
+
+    return videoId;
   }
 
   function escapeHtml(str) {
@@ -417,22 +568,14 @@ document.addEventListener("DOMContentLoaded", () => {
     displayParts(packedParts);
   });
 
-  loadStreamBtn.addEventListener("click", async () => {
-    const videoId = getYouTubeVideoId(videoInput.value);
+  loadStreamBtn.addEventListener("click", async (event) => {
+    event.preventDefault();
 
-    if (!videoId) {
-      alert("Enter a YouTube video ID or URL before loading the stream.");
-      return;
+    try {
+      await findAndLoadLiveStream({ showAlert: true });
+    } catch (error) {
+      console.warn(error);
     }
-
-    currentVideoId = videoId;
-    currentLiveChatId = null;
-
-    videoFrame.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-    // Use the popout live_chat and include embed_domain so YouTube allows the iframe
-    chatFrame.src = `https://www.youtube.com/live_chat?is_popout=1&v=${videoId}&embed_domain=${window.location.hostname}`;
-
-    // No reply/mention population performed
   });
 
   loginBtn.addEventListener("click", () => {
@@ -461,17 +604,11 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const videoId = getYouTubeVideoId(videoInput.value);
-
-    if (!videoId) {
-      alert("Enter a YouTube video ID or URL before sending messages.");
-      return;
-    }
-
     let liveChatId;
 
     try {
       setYoutubeSending(true, "Preparing YouTube chat...");
+      const videoId = await ensureLiveStreamLoaded();
       liveChatId = await getLiveChatId(videoId);
     } catch (error) {
       setYoutubeSending(false);
@@ -491,6 +628,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       setYoutubeSending(false);
+      clearParagraphAndParts();
       sendAllBtn.textContent = "Sent!";
       sendAllBtn.style.backgroundColor = "#888";
       sendAllBtn.style.color = "#fff";
@@ -546,17 +684,11 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const videoId = getYouTubeVideoId(videoInput.value);
-
-    if (!videoId) {
-      alert("Enter a YouTube video ID or URL before sending messages.");
-      return;
-    }
-
     let liveChatId;
 
     try {
       setYoutubeSending(true, "Preparing YouTube chat...");
+      const videoId = await ensureLiveStreamLoaded();
       liveChatId = await getLiveChatId(videoId);
     } catch (error) {
       setYoutubeSending(false);

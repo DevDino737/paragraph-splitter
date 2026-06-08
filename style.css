@@ -127,8 +127,7 @@ button {
 }
 
 textarea,
-#splitType,
-#videoInput {
+#splitType {
   color: var(--text);
   background: var(--panel);
   border: 1px solid var(--border);
@@ -142,8 +141,7 @@ textarea,
 }
 
 textarea:focus,
-#splitType:focus,
-#videoInput:focus {
+#splitType:focus {
   background: #111;
   border-color: #fff;
   box-shadow:
@@ -154,8 +152,9 @@ textarea:focus,
 textarea {
   display: block;
   width: 100%;
+  height: 240px;
   min-height: 200px;
-  margin-bottom: 20px;
+  margin: 0;
   padding: 22px;
   resize: vertical;
   font-size: 1rem;
@@ -165,6 +164,7 @@ textarea {
   color: transparent;
   text-shadow: 0 0 0 var(--text);
   caret-color: var(--text);
+  overflow: auto;
 }
 
 .textarea-container {
@@ -175,11 +175,11 @@ textarea {
 
 .paragraph-highlight {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
-  min-height: 200px;
+  height: 100%;
   padding: 22px;
+  overflow: hidden;
   overflow-wrap: break-word;
   white-space: pre-wrap;
   word-break: break-word;
@@ -189,8 +189,7 @@ textarea {
   font: inherit;
 }
 
-textarea::placeholder,
-#videoInput::placeholder {
+textarea::placeholder {
   color: #777;
 }
 
@@ -321,12 +320,6 @@ button:focus-visible {
   font-weight: 600;
 }
 
-#videoInput {
-  width: min(100%, 460px);
-  min-height: 46px;
-  padding: 0 14px;
-}
-
 #loadStreamBtn,
 #sendAllBtn {
   color: #fff;
@@ -432,7 +425,6 @@ button:focus-visible {
 
   #splitType,
   #splitButton,
-  #videoInput,
   #loadStreamBtn,
   #loginBtn,
   #sendAllBtn {
