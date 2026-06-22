@@ -1,6 +1,6 @@
 import { splitTextTightly } from "./textSplitter.js";
 import { findAndLoadLiveStream } from "./stream.js";
-import { CHANNEL_ID, getLiveChatId, sendMessage } from "./youtubeApi.js";
+import { getLiveChatId, sendMessage } from "./youtubeApi.js";
 import { setCurrentLiveChatId, setCurrentParts } from "./state.js";
 import { showToast } from "./ui.js";
 
@@ -81,7 +81,8 @@ document.addEventListener("DOMContentLoaded", () => {
   input.addEventListener("blur", () => {
     setTimeout(() => {
       if (!selectionToolbar.matches(":hover")) hideSelectionToolbar();
-    }, 720);
+    },
+  120);
   });
 
   selectionSendBtn.addEventListener("click", async () => {
@@ -108,10 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
     selectionToolbar.hidden = false;
     selectionToolbar.classList.add("show");
     selectionToolbar.style.left = `${position.left}px`;
-    selectionToolbar.style.top = `${Math.max(
-      window.scrollY + 8,
-      position.top - selectionToolbar.offsetHeight - 10
-    )}px`;
+    selectionToolbar.style.top = `${position.top}px`;
   }
 
   function hideSelectionToolbar() {
@@ -187,7 +185,8 @@ document.addEventListener("DOMContentLoaded", () => {
       window.scrollY +
       markerRect.top -
       mirror.getBoundingClientRect().top -
-      textarea.scrollTop;
+      textarea.scrollTop -
+      42;
 
     mirror.remove();
 
@@ -239,29 +238,17 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   async function loadCurrentStream() {
-    let didLoadStream = false;
-
     try {
       setLoading(loadStreamBtn, true, "Loading...");
       currentVideoId = await getRequestedVideoId();
       loadVideoFrames(currentVideoId);
       liveChatId = null;
-      didLoadStream = true;
+      loadStreamBtn.hidden = true;
+      dropdownMenu.classList.remove("show");
       showToast(toast, "Stream loaded.");
     } catch (error) {
-      if (navbarUrlInput.value.trim()) {
-        showToast(toast, error.message);
-        return;
-      }
-
-      currentVideoId = null;
-      liveChatId = null;
-      loadChannelLiveFrame();
-      didLoadStream = true;
-      showToast(toast, "Loaded channel live player. Paste the live URL to send chat.");
+      showToast(toast, error.message);
     } finally {
-      loadStreamBtn.hidden = didLoadStream;
-      dropdownMenu.classList.remove("show");
       setLoading(loadStreamBtn, false, "Load Stream");
     }
   }
@@ -320,11 +307,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const domain = encodeURIComponent(location.hostname);
       chatFrame.src = `https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${domain}`;
     }
-  }
-
-  function loadChannelLiveFrame() {
-    videoFrame.src = `https://www.youtube.com/embed/live_stream?channel=${CHANNEL_ID}`;
-    chatFrame.removeAttribute("src");
   }
 });
 
