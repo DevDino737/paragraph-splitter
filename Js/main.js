@@ -1,6 +1,6 @@
 import { splitTextTightly } from "./textSplitter.js";
 import { findAndLoadLiveStream } from "./stream.js";
-import { getLiveChatId, sendMessage } from "./youtubeApi.js";
+import { CHANNEL_ID, getLiveChatId, sendMessage } from "./youtubeApi.js";
 import { setCurrentLiveChatId, setCurrentParts } from "./state.js";
 import { showToast } from "./ui.js";
 
@@ -25,6 +25,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const sendingIndicator = document.getElementById("youtubeSendingIndicator");
   const sendingText = document.getElementById("youtubeSendingText");
   const profilePic = document.getElementById("profilePic");
+  const selectionToolbar = document.getElementById("selectionToolbar");
+  const selectionSendBtn = selectionToolbar.querySelector("[data-action='send']");
 
   let currentParts = [];
   let currentVideoId = null;
@@ -47,10 +49,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  updateSplitMode();
+
   toggleSplit.addEventListener("change", () => {
+    updateSplitMode();
+  });
+
+  function updateSplitMode() {
     splitResults.hidden = !toggleSplit.checked;
     splitBtn.textContent = toggleSplit.checked ? "Split Paragraph" : "Send To Chat";
-  });
+    sendBtn.hidden = !toggleSplit.checked;
+  }
 
   toggleStream.addEventListener("change", () => {
     youtubeSection.hidden = !toggleStream.checked;
@@ -64,6 +73,129 @@ document.addEventListener("DOMContentLoaded", () => {
       await sendCurrentParts(splitBtn, "Send To Chat");
     }
   });
+
+  input.addEventListener("mouseup", updateSelectionToolbar);
+  input.addEventListener("keyup", updateSelectionToolbar);
+  input.addEventListener("select", updateSelectionToolbar);
+  input.addEventListener("scroll", updateSelectionToolbar);
+  input.addEventListener("blur", () => {
+    setTimeout(() => {
+      if (!selectionToolbar.matches(":hover")) hideSelectionToolbar();
+    }, 720);
+  });
+
+  selectionSendBtn.addEventListener("click", async () => {
+    const selectedText = getSelectedInputText();
+    if (!selectedText) {
+      hideSelectionToolbar();
+      return;
+    }
+
+    currentParts = splitTextTightly(selectedText);
+    setCurrentParts(currentParts);
+    hideSelectionToolbar();
+    await sendCurrentParts(selectionSendBtn, "Send");
+  });
+
+  function updateSelectionToolbar() {
+    const selectedText = getSelectedInputText();
+    if (!selectedText) {
+      hideSelectionToolbar();
+      return;
+    }
+
+    const position = getTextareaSelectionToolbarPosition(input);
+    selectionToolbar.hidden = false;
+    selectionToolbar.classList.add("show");
+    selectionToolbar.style.left = `${position.left}px`;
+    selectionToolbar.style.top = `${Math.max(
+      window.scrollY + 8,
+      position.top - selectionToolbar.offsetHeight - 10
+    )}px`;
+  }
+
+  function hideSelectionToolbar() {
+    selectionToolbar.classList.remove("show");
+    selectionToolbar.hidden = true;
+  }
+
+  function getSelectedInputText() {
+    return input.value.slice(input.selectionStart, input.selectionEnd).trim();
+  }
+
+  function getTextareaSelectionToolbarPosition(textarea) {
+    const start = getTextareaSelectionPosition(textarea, textarea.selectionStart);
+    const end = getTextareaSelectionPosition(textarea, textarea.selectionEnd);
+    const sameLine = Math.abs(start.top - end.top) < 8;
+
+    if (sameLine) {
+      return {
+        left: (start.left + end.left) / 2,
+        top: start.top,
+      };
+    }
+
+    return start;
+  }
+
+  function getTextareaSelectionPosition(textarea, selectionIndex) {
+    const rect = textarea.getBoundingClientRect();
+    const style = window.getComputedStyle(textarea);
+    const mirror = document.createElement("div");
+    const marker = document.createElement("span");
+    const properties = [
+      "boxSizing",
+      "width",
+      "fontFamily",
+      "fontSize",
+      "fontWeight",
+      "lineHeight",
+      "letterSpacing",
+      "paddingTop",
+      "paddingRight",
+      "paddingBottom",
+      "paddingLeft",
+      "borderTopWidth",
+      "borderRightWidth",
+      "borderBottomWidth",
+      "borderLeftWidth",
+      "whiteSpace",
+      "wordWrap",
+    ];
+
+    properties.forEach((property) => {
+      mirror.style[property] = style[property];
+    });
+
+    mirror.style.position = "absolute";
+    mirror.style.visibility = "hidden";
+    mirror.style.overflow = "hidden";
+    mirror.style.top = "0";
+    mirror.style.left = "-9999px";
+    mirror.style.whiteSpace = "pre-wrap";
+    mirror.style.overflowWrap = "break-word";
+
+    mirror.textContent = textarea.value.slice(0, selectionIndex);
+    marker.textContent = textarea.value.slice(selectionIndex, selectionIndex + 1) || ".";
+    mirror.appendChild(marker);
+    document.body.appendChild(mirror);
+
+    const markerRect = marker.getBoundingClientRect();
+    const left = rect.left + window.scrollX + markerRect.left - mirror.getBoundingClientRect().left;
+    const top =
+      rect.top +
+      window.scrollY +
+      markerRect.top -
+      mirror.getBoundingClientRect().top -
+      textarea.scrollTop;
+
+    mirror.remove();
+
+    return {
+      left: Math.max(rect.left + window.scrollX + 8, left),
+      top: Math.max(rect.top + window.scrollY + 8, top),
+    };
+  }
 
   function splitInputText() {
     const text = input.value.trim();
@@ -102,17 +234,34 @@ document.addEventListener("DOMContentLoaded", () => {
     loadCurrentStream();
   });
 
+  navbarUrlInput.addEventListener("input", () => {
+    loadStreamBtn.hidden = false;
+  });
+
   async function loadCurrentStream() {
+    let didLoadStream = false;
+
     try {
       setLoading(loadStreamBtn, true, "Loading...");
       currentVideoId = await getRequestedVideoId();
       loadVideoFrames(currentVideoId);
       liveChatId = null;
-      dropdownMenu.classList.remove("show");
+      didLoadStream = true;
       showToast(toast, "Stream loaded.");
     } catch (error) {
-      showToast(toast, error.message);
+      if (navbarUrlInput.value.trim()) {
+        showToast(toast, error.message);
+        return;
+      }
+
+      currentVideoId = null;
+      liveChatId = null;
+      loadChannelLiveFrame();
+      didLoadStream = true;
+      showToast(toast, "Loaded channel live player. Paste the live URL to send chat.");
     } finally {
+      loadStreamBtn.hidden = didLoadStream;
+      dropdownMenu.classList.remove("show");
       setLoading(loadStreamBtn, false, "Load Stream");
     }
   }
@@ -134,6 +283,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!currentVideoId) {
         currentVideoId = await getRequestedVideoId();
         loadVideoFrames(currentVideoId);
+        loadStreamBtn.hidden = true;
       }
 
       if (!liveChatId) {
@@ -170,6 +320,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const domain = encodeURIComponent(location.hostname);
       chatFrame.src = `https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${domain}`;
     }
+  }
+
+  function loadChannelLiveFrame() {
+    videoFrame.src = `https://www.youtube.com/embed/live_stream?channel=${CHANNEL_ID}`;
+    chatFrame.removeAttribute("src");
   }
 });
 

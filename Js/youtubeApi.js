@@ -1,9 +1,20 @@
 import { accessToken } from "./state.js";
 
-const CHANNEL_ID = "UCAtGANLX7I5N4wOBLH8Yq8Q";
+export const CHANNEL_ID = "UCdqeecqy05FAzERRJbv7AGw";
 
 // find live stream
 export async function findLiveVideoIdForChannel() {
+  const liveSearchVideoId = await findLiveVideoIdFromSearch();
+  if (liveSearchVideoId) return liveSearchVideoId;
+
+  const recentVideoIds = await findRecentVideoIdsForChannel();
+  const activeVideoId = await findActiveLiveVideoFromIds(recentVideoIds);
+  if (activeVideoId) return activeVideoId;
+
+  throw new Error("No live stream found. Try pasting the live video URL.");
+}
+
+async function findLiveVideoIdFromSearch() {
   const params = new URLSearchParams({
     part: "snippet",
     channelId: CHANNEL_ID,
@@ -22,11 +33,66 @@ export async function findLiveVideoIdForChannel() {
   );
 
   const data = await res.json();
+  if (!res.ok) throw new Error(data.error?.message || "Live stream search failed");
 
-  const videoId = data.items?.[0]?.id?.videoId;
-  if (!videoId) throw new Error("No live stream found");
+  return data.items?.[0]?.id?.videoId || "";
+}
 
-  return videoId;
+async function findRecentVideoIdsForChannel() {
+  const params = new URLSearchParams({
+    part: "snippet",
+    channelId: CHANNEL_ID,
+    type: "video",
+    order: "date",
+    maxResults: "10",
+  });
+
+  const res = await fetch(
+    `https://www.googleapis.com/youtube/v3/search?${params}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error?.message || "Recent video search failed");
+
+  return data.items
+    ?.map((item) => item.id?.videoId)
+    .filter(Boolean) || [];
+}
+
+async function findActiveLiveVideoFromIds(videoIds) {
+  if (!videoIds.length) return "";
+
+  const params = new URLSearchParams({
+    part: "snippet,liveStreamingDetails",
+    id: videoIds.join(","),
+  });
+
+  const res = await fetch(
+    `https://www.googleapis.com/youtube/v3/videos?${params}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error?.message || "Live video details failed");
+
+  const activeLive = data.items?.find((item) => {
+    const details = item.liveStreamingDetails;
+    return (
+      item.snippet?.liveBroadcastContent === "live" ||
+      (details?.actualStartTime && !details?.actualEndTime)
+    );
+  });
+
+  return activeLive?.id || "";
 }
 
 // get live chat id
@@ -41,6 +107,7 @@ export async function getLiveChatId(videoId) {
   );
 
   const data = await res.json();
+  if (!res.ok) throw new Error(data.error?.message || "Live chat lookup failed");
 
   const chatId = data.items?.[0]?.liveStreamingDetails?.activeLiveChatId;
 
