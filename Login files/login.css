@@ -1,0 +1,295 @@
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  height:100vh;
+  overflow:hidden;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#050505;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+
+/* =========================
+   INTRO (HELLOO)
+========================= */
+
+#intro{
+  position:fixed;
+  inset:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#050505;
+  z-index:9999;
+
+  animation:introFade 7s forwards;
+}
+
+.glass-word{
+  font-family:'Pacifico', cursive;
+  font-size:clamp(6rem,14vw,14rem);
+  color:rgba(255,250,235,.95);
+
+  /* GLASS BOX BACK */
+  padding:.25em .55em;
+  border-radius:45px;
+
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.18);
+
+  backdrop-filter:blur(40px) saturate(180%);
+  -webkit-backdrop-filter:blur(40px) saturate(180%);
+
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.45),
+    inset 0 1px 1px rgba(255,255,255,.35);
+
+  opacity:0;
+  animation:helloReveal 6s ease forwards;
+
+  position:relative;
+  overflow:hidden;
+}
+
+/* shine sweep */
+.glass-word::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:-200%;
+  width:300%;
+  height:100%;
+
+  background:linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,.25),
+    transparent
+  );
+
+  animation:shine 2.8s ease forwards;
+}
+
+/* =========================
+   BACKGROUND LIGHTS (UPDATED)
+========================= */
+
+.background{
+  position:fixed;
+  inset:0;
+  overflow:hidden;
+}
+
+/* base light style */
+.light{
+  position:absolute;
+  border-radius:50%;
+  filter:blur(170px);
+  opacity:.7;
+
+  background:radial-gradient(
+    circle,
+    rgba(255,244,214,.95),
+    rgba(255,244,214,0)
+  );
+
+  animation: flicker 4s infinite ease-in-out;
+}
+
+/* different colors */
+.light1{
+  width:650px;
+  height:650px;
+  top:-200px;
+  left:-200px;
+  animation: float1 22s infinite alternate ease-in-out, flicker 3.5s infinite;
+}
+
+.light2{
+  width:500px;
+  height:500px;
+  top:20%;
+  right:-200px;
+  animation: float2 26s infinite alternate ease-in-out, flicker 4.2s infinite;
+}
+
+.light3{
+  width:450px;
+  height:450px;
+  bottom:-150px;
+  left:10%;
+
+  background:radial-gradient(
+    circle,
+    rgba(255,210,160,.85),
+    rgba(255,210,160,0)
+  );
+
+  animation: float3 24s infinite alternate ease-in-out, flicker 5s infinite;
+}
+
+.light4{
+  width:420px;
+  height:420px;
+  top:50%;
+  left:40%;
+
+  background:radial-gradient(
+    circle,
+    rgba(255,255,255,.9),
+    rgba(255,255,255,0)
+  );
+
+  animation: float4 28s infinite alternate ease-in-out, flicker 3.8s infinite;
+}
+
+/* =========================
+   LOGIN CARD (GLASS)
+========================= */
+
+.login-card{
+  width:430px;
+  max-width:90%;
+
+  padding:50px;
+  text-align:center;
+
+  border-radius:36px;
+
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.18);
+
+  backdrop-filter:blur(55px) saturate(220%);
+  -webkit-backdrop-filter:blur(55px) saturate(220%);
+
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.4),
+    inset 0 1px 1px rgba(255,255,255,.25);
+
+  color:white;
+
+  position:relative;
+  z-index:10;
+
+  overflow:hidden;
+}
+
+.login-card::after{
+  content:"";
+  position:absolute;
+  inset:-100px;
+
+  background:radial-gradient(
+    circle at center,
+    rgba(255,244,214,.12),
+    transparent 60%
+  );
+
+  pointer-events:none;
+}
+
+h1{
+  margin-bottom:15px;
+  font-weight:500;
+}
+
+#loginStatus{
+  color:rgba(255,255,255,.75);
+  margin-bottom:25px;
+}
+
+#loginBtn{
+  width:100%;
+  padding:16px;
+
+  border:none;
+  border-radius:18px;
+
+  background:rgba(255,255,255,.12);
+  color:white;
+
+  font-size:1rem;
+  font-weight:600;
+
+  cursor:pointer;
+
+  transition:.25s;
+}
+
+#loginBtn:hover{
+  transform:translateY(-3px);
+  background:rgba(255,255,255,.18);
+}
+
+/* =========================
+   ANIMATIONS
+========================= */
+
+@keyframes helloReveal{
+  0%{
+    opacity:0;
+    transform:scale(.75);
+    filter:blur(30px);
+  }
+  25%{
+    opacity:1;
+    transform:scale(1);
+    filter:blur(0);
+  }
+  75%{opacity:1;}
+  100%{
+    opacity:0;
+    transform:scale(1.08);
+    filter:blur(10px);
+  }
+}
+
+@keyframes introFade{
+  0%,85%{opacity:1;}
+  100%{
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+  }
+}
+
+@keyframes shine{
+  from{transform:translateX(-200%);}
+  to{transform:translateX(200%);}
+}
+
+/* smooth drifting motion */
+@keyframes float1{
+  from{transform:translate(0,0);}
+  to{transform:translate(260px,180px);}
+}
+
+@keyframes float2{
+  from{transform:translate(0,0);}
+  to{transform:translate(-240px,210px);}
+}
+
+@keyframes float3{
+  from{transform:translate(0,0);}
+  to{transform:translate(200px,-170px);}
+}
+
+@keyframes float4{
+  from{transform:translate(0,0);}
+  to{transform:translate(-170px,-150px);}
+}
+
+/* flicker effect */
+@keyframes flicker{
+  0%   {opacity:.55; transform:scale(1);}
+  20%  {opacity:.8;}
+  40%  {opacity:.45;}
+  60%  {opacity:.9; transform:scale(1.02);}
+  80%  {opacity:.6;}
+  100% {opacity:.75; transform:scale(1);}
+}
