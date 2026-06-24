@@ -1,6 +1,6 @@
 import { accessToken } from "./state.js";
 
-export const CHANNEL_ID = "UCdqeecqy05FAzERRJbv7AGw";
+export const CHANNEL_ID = "UCpOWvrgnLr6JlCR45HbT6vQ";
 
 // find live stream
 export async function findLiveVideoIdForChannel() {
