@@ -7,13 +7,23 @@
   <title>Login page</title>
 
   <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
 
   <!-- CSS -->
   <link rel="stylesheet" href="login.css">
 
   <!-- Google -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- Speed up connection to Google -->
+<link rel="preconnect" href="https://accounts.google.com">
+<link rel="preconnect" href="https://apis.google.com">
+<link rel="dns-prefetch" href="//accounts.google.com">
+<link rel="dns-prefetch" href="//apis.google.com">
+
+<!-- Google -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body>
@@ -41,7 +51,7 @@
   </div>
 
     <!-- changing name to Login.js -->
-  <script src="Login.js"></script>
+  <script src="Login.js" defer></script>
 
 </body>
 </html>

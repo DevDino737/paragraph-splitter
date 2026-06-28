@@ -57,16 +57,31 @@ function initializeGoogle() {
   return true;
 }
 
-window.addEventListener("load", () => {
+document.addEventListener("DOMContentLoaded", () => {
   const loginBtn = document.getElementById("loginBtn");
   const loginStatus = document.getElementById("loginStatus");
 
+  // Initialize Google as soon as it's available
+  const waitForGoogle = setInterval(() => {
+    if (initializeGoogle()) {
+      clearInterval(waitForGoogle);
+    }
+  }, 50);
+
   loginBtn.addEventListener("click", () => {
-    if (!tokenClient && !initializeGoogle()) {
-      loginStatus.textContent = "Google library failed to load.";
+    if (!tokenClient) {
+      loginStatus.textContent = "Loading Google Sign-In...";
       return;
     }
 
-    tokenClient.requestAccessToken();
+    // Show that something is happening
+    loginBtn.textContent = "Loading...";
+    loginBtn.disabled = true;
+    loginStatus.textContent = "Opening Google Sign-In...";
+
+      requestAnimationFrame(() => {
+      tokenClient.requestAccessToken();
+    });
   });
+
 });
