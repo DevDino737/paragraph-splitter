@@ -1,3 +1,11 @@
+// Redirect to login if the user isn't signed in
+const accessToken = localStorage.getItem("accessToken");
+
+if (!accessToken) {
+  window.location.replace("Login%20files/Login.html");
+}
+
+
 import { splitTextTightly } from "./textSplitter.js";
 import { findAndLoadLiveStream } from "./stream.js";
 import { getLiveChatId, sendMessage } from "./youtubeApi.js";
