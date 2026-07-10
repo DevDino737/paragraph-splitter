@@ -1,4 +1,5 @@
 import { accessToken } from "./state.js";
+import { isUnauthorized, handleUnauthorized } from "./authGuard.js";
 
 export const CHANNEL_ID = "UCpOWvrgnLr6JlCR45HbT6vQ";
 
@@ -32,6 +33,11 @@ async function findLiveVideoIdFromSearch() {
     }
   );
 
+  if (isUnauthorized(res)) {
+    handleUnauthorized();
+    throw new Error("Session expired. Redirecting to login...");
+  }
+
   const data = await res.json();
   if (!res.ok) throw new Error(data.error?.message || "Live stream search failed");
 
@@ -55,6 +61,11 @@ async function findRecentVideoIdsForChannel() {
       },
     }
   );
+
+  if (isUnauthorized(res)) {
+    handleUnauthorized();
+    throw new Error("Session expired. Redirecting to login...");
+  }
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.error?.message || "Recent video search failed");
@@ -81,6 +92,11 @@ async function findActiveLiveVideoFromIds(videoIds) {
     }
   );
 
+  if (isUnauthorized(res)) {
+    handleUnauthorized();
+    throw new Error("Session expired. Redirecting to login...");
+  }
+
   const data = await res.json();
   if (!res.ok) throw new Error(data.error?.message || "Live video details failed");
 
@@ -105,6 +121,11 @@ export async function getLiveChatId(videoId) {
       },
     }
   );
+
+  if (isUnauthorized(res)) {
+    handleUnauthorized();
+    throw new Error("Session expired. Redirecting to login...");
+  }
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.error?.message || "Live chat lookup failed");
@@ -137,6 +158,11 @@ export async function sendMessage(liveChatId, message) {
       }),
     }
   );
+
+  if (isUnauthorized(res)) {
+    handleUnauthorized();
+    throw new Error("Session expired. Redirecting to login...");
+  }
 
   const data = await res.json();
 

@@ -50,6 +50,46 @@
           </label>
         </div>
 
+        <!--
+          NEW: Show Chat toggle.
+          This is separate from "Show Stream" on purpose - "Show Stream" (toggleStream)
+          keeps controlling the whole youtube-section exactly like before, so nothing
+          that already depends on it breaks. This new checkbox only hides/shows the
+          chatFrame iframe, which main.js never touches, so it's safe to add here and
+          wire up from a separate script (Js/layout.js).
+        -->
+        <div class="menu-item">
+          <span>Show Chat</span>
+
+          <label class="switch">
+            <input
+              type="checkbox"
+              id="toggleChat"
+              checked
+            >
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <hr>
+
+        <!--
+          NEW: Layout switcher.
+          Plain buttons with a data-layout attribute. Js/layout.js reads that attribute
+          and swaps a class on #workspace (layout-default / layout-side / layout-compact).
+          All the actual positioning is done in CSS via grid-template-areas, so this
+          script never has to move any element around in the DOM.
+        -->
+        <div class="menu-item menu-item-column">
+          <span>Layout</span>
+
+          <div class="layout-switcher" role="group" aria-label="Workspace layout">
+            <button type="button" class="layout-btn" data-layout="default">Default</button>
+            <button type="button" class="layout-btn" data-layout="side">Side-by-Side</button>
+            <button type="button" class="layout-btn" data-layout="compact">Compact</button>
+          </div>
+        </div>
+
         <hr>
 
         <input
@@ -80,70 +120,93 @@
 
 </header>
 
-<!-- ================= INPUT ================= -->
-<div class="textarea-container">
+<!--
+  ================= WORKSPACE =================
+  NEW wrapper element. This is the only structural addition needed to support multiple
+  layouts: #workspace becomes a CSS grid, and its three children (.workspace-input,
+  #split-results, #youtube-section) are placed into named grid areas. Switching layouts
+  is just adding/removing a class here (layout-default / layout-side / layout-compact) -
+  see Js/layout.js. No existing IDs were renamed and no elements were moved into a
+  different parent/child relationship relative to each other, so main.js keeps working
+  unchanged.
+-->
+<main id="workspace" class="layout-default">
 
-  <textarea
-    id="paragraphInput"
-    placeholder="Paste your paragraph here..."
-  ></textarea>
+  <!--
+    NEW wrapper: groups the textarea and its action button together so they can be
+    placed as a single grid area ("input"). The textarea-container div and its contents
+    are untouched.
+  -->
+  <div class="workspace-input">
 
-</div>
+    <!-- ================= INPUT ================= -->
+    <div class="textarea-container">
 
-<div id="split-actions">
-  <button id="splitButton">
-    Split Paragraph
-  </button>
-</div>
+      <textarea
+        id="paragraphInput"
+        placeholder="Paste your paragraph here..."
+      ></textarea>
 
-<!-- ================= SPLIT RESULTS ================= -->
-<section id="split-results">
+    </div>
 
-  <h2>Split Text</h2>
-
-  <div id="output"></div>
-
-</section>
-
-<!-- ================= YOUTUBE ================= -->
-<section id="youtube-section">
-
-  <div id="stream-control">
-
-    <button id="loadStreamBtn">
-      Load Stream
-    </button>
-
-    <button id="sendAllBtn">
-      Send All To Chat
-    </button>
+    <div id="split-actions">
+      <button id="splitButton">
+        Split Paragraph
+      </button>
+    </div>
 
   </div>
 
-  <!-- Sending Status -->
-  <div
-    id="youtubeSendingIndicator"
-    hidden
-  >
-    <span id="youtubeSendingText">
-      Sending to YouTube...
-    </span>
-  </div>
+  <!-- ================= SPLIT RESULTS ================= -->
+  <section id="split-results">
 
-  <div id="stream-frames">
+    <h2>Split Text</h2>
 
-    <iframe
-      id="videoFrame"
-      allowfullscreen
-    ></iframe>
+    <div id="output"></div>
 
-    <iframe
-      id="chatFrame"
-    ></iframe>
+  </section>
 
-  </div>
+  <!-- ================= YOUTUBE ================= -->
+  <section id="youtube-section">
 
-</section>
+    <div id="stream-control">
+
+      <button id="loadStreamBtn">
+        Load Stream
+      </button>
+
+      <button id="sendAllBtn">
+        Send All To Chat
+      </button>
+
+    </div>
+
+    <!-- Sending Status -->
+    <div
+      id="youtubeSendingIndicator"
+      hidden
+    >
+      <span id="youtubeSendingText">
+        Sending to YouTube...
+      </span>
+    </div>
+
+    <div id="stream-frames">
+
+      <iframe
+        id="videoFrame"
+        allowfullscreen
+      ></iframe>
+
+      <iframe
+        id="chatFrame"
+      ></iframe>
+
+    </div>
+
+  </section>
+
+</main>
 
 <!-- ================= SELECTION TOOLBAR ================= -->
 <div
@@ -164,6 +227,7 @@
 ></div>
 
 <script type="module" src="./Js/main.js"></script>
+<script type="module" src="./Js/layout.js"></script>
 
 </body>
 </html>

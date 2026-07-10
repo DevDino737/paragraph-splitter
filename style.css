@@ -186,6 +186,46 @@ body {
   transform: translateX(22px);
 }
 
+/* ================= LAYOUT SWITCHER (new) ================= */
+/* Lives in the dropdown menu next to the existing toggle switches. */
+
+.menu-item-column {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.layout-switcher {
+  display: flex;
+  gap: 6px;
+}
+
+.layout-btn {
+  flex: 1;
+  margin: 0;
+  padding: 7px 8px;
+
+  font-size: 0.85rem;
+  font-weight: 600;
+
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+
+  cursor: pointer;
+}
+
+.layout-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.layout-btn.active {
+  background: var(--focus);
+  border-color: var(--focus);
+  color: #000;
+}
+
 /* ================= URL INPUT ================= */
 
 #navbarUrlInput {
@@ -223,12 +263,76 @@ h1 {
   line-height: 1.1;
 }
 
+/* ================= WORKSPACE / LAYOUTS (new) ================= */
+/*
+  #workspace is a CSS grid with three named areas: "input", "split", "stream".
+  Its children (.workspace-input, #split-results, #youtube-section) are assigned
+  to those areas below. Switching layouts is done purely by swapping a class on
+  #workspace (see Js/layout.js) - the grid-template-areas rules here decide where
+  everything ends up, so JS never has to reorder DOM nodes.
+*/
+
+#workspace {
+  display: grid;
+  gap: 18px;
+
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "input"
+    "split"
+    "stream";
+}
+
+.workspace-input {
+  grid-area: input;
+}
+
+#split-results {
+  grid-area: split;
+}
+
+#youtube-section {
+  grid-area: stream;
+}
+
+/* --- Default layout ---
+   Textarea, then Split Results, then Video | Chat (stacked, full width).
+   This matches the original single-column page flow, so it's the base/default
+   case and needs no extra overrides beyond the ones above. */
+
+/* --- Side-by-Side layout ---
+   Textarea | Video, with Split Results spanning the full width below.
+   Chat stays attached under Video inside #youtube-section (see the
+   #stream-frames override further down), rather than being pulled out into a
+   separate grid area - this avoids moving chatFrame to a different parent. */
+
+#workspace.layout-side {
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    "input stream"
+    "split split";
+}
+
+/* --- Compact layout ---
+   Textarea, Split Results, Video, Chat - all stacked full width. Same grid
+   areas as default; only the internal video/chat arrangement changes (below). */
+
+#workspace.layout-compact {
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "input"
+    "split"
+    "stream";
+}
+
 /* ================= TEXTAREA ================= */
 
 textarea {
   width: 100%;
   height: 180px;
   padding: 16px;
+
+  font-size: 15px;
 
   border-radius: 8px;
 
@@ -378,6 +482,21 @@ iframe {
   border: 1px solid var(--border);
 }
 
+/* In Side-by-Side and Compact layouts, video and chat stack vertically instead
+   of sitting side-by-side, since the column is narrower (side-by-side) or the
+   goal is a simple top-to-bottom stack (compact). */
+#workspace.layout-side #stream-frames,
+#workspace.layout-compact #stream-frames {
+  grid-template-columns: 1fr;
+}
+
+/* NEW: chat panel visibility. chatFrame already gets display:none for free from
+   the native `hidden` attribute that Js/layout.js toggles; this just lets the
+   video reclaim the extra column space when chat is turned off. */
+#youtube-section.chat-hidden #stream-frames {
+  grid-template-columns: 1fr;
+}
+
 /* ================= MOBILE ================= */
 
 @media (max-width: 800px) {
@@ -387,6 +506,16 @@ iframe {
 
   #stream-frames {
     grid-template-columns: 1fr;
+  }
+
+  /* Side-by-Side only makes sense on wider screens; fall back to a single
+     column stack (same shape as the default/compact layouts) on mobile. */
+  #workspace.layout-side {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "input"
+      "split"
+      "stream";
   }
 
   .dropdown-content {
