@@ -3,13 +3,39 @@
 }
 
 :root {
-  --bg: #000;
-  --panel: #0d0d0d;
-  --panel-soft: #171717;
-  --text: #fff;
-  --muted: #a3a3a3;
-  --border: #2a2a2a;
+  color-scheme: light dark;
+  --bg: #fff;
+  --panel: #f7f7f7;
+  --panel-soft: #ededed;
+  --text: #111;
+  --muted: #626262;
+  --border: #d4d4d4;
   --focus: #22c55e;
+  --navbar-bg: rgba(255, 255, 255, 0.9);
+  --control-bg: #fff;
+  --control-hover: #f0f0f0;
+  --menu-bg: rgba(255, 255, 255, 0.92);
+  --menu-control-bg: rgba(0, 0, 0, 0.05);
+  --menu-control-hover: rgba(0, 0, 0, 0.1);
+  --shadow: rgba(0, 0, 0, 0.18);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000;
+    --panel: #0d0d0d;
+    --panel-soft: #171717;
+    --text: #fff;
+    --muted: #a3a3a3;
+    --border: #2a2a2a;
+    --navbar-bg: rgba(10, 10, 10, 0.9);
+    --control-bg: #1a1a1a;
+    --control-hover: #292929;
+    --menu-bg: rgba(28, 28, 30, 0.92);
+    --menu-control-bg: rgba(255, 255, 255, 0.06);
+    --menu-control-hover: rgba(255, 255, 255, 0.12);
+    --shadow: rgba(0, 0, 0, 0.45);
+  }
 }
 
 /* ================= BASE ================= */
@@ -45,7 +71,7 @@ body {
 
   padding: 0 18px;
 
-  background: rgba(10, 10, 10, 0.9);
+  background: var(--navbar-bg);
   backdrop-filter: blur(12px);
 
   border-bottom: 1px solid var(--border);
@@ -65,10 +91,10 @@ body {
 }
 
 .dropbtn {
-  background: rgba(255,255,255,.08);
-  color: white;
+  background: var(--menu-control-bg);
+  color: var(--text);
 
-  border: 1px solid rgba(255,255,255,.12);
+  border: 1px solid var(--border);
 
   border-radius: 8px;
 
@@ -85,7 +111,7 @@ body {
 }
 
 .dropbtn:hover {
-  background: rgba(255,255,255,.12);
+  background: var(--menu-control-hover);
 }
 
 .dropdown-content {
@@ -97,18 +123,18 @@ body {
 
   width: 300px;
 
-  background: rgba(28, 28, 30, 0.85);
+  background: var(--menu-bg);
 
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
 
   border-radius: 10px;
 
-  border: 1px solid rgba(255,255,255,.08);
+  border: 1px solid var(--border);
 
   overflow: hidden;
 
-  box-shadow: 0 20px 60px rgba(0,0,0,.45);
+  box-shadow: 0 20px 60px var(--shadow);
 
   z-index: 999;
 }
@@ -124,14 +150,14 @@ body {
 
   padding: 13px 16px;
 
-  color: white;
+  color: var(--text);
   font-size: 1rem;
   font-weight: 500;
 }
 
 .dropdown-content hr {
   border: none;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  border-top: 1px solid var(--border);
   margin: 0;
 }
 
@@ -209,15 +235,15 @@ body {
   font-weight: 600;
 
   color: var(--text);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--menu-control-bg);
+  border: 1px solid var(--border);
   border-radius: 6px;
 
   cursor: pointer;
 }
 
 .layout-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--menu-control-hover);
 }
 
 .layout-btn.active {
@@ -235,10 +261,10 @@ body {
   padding: 10px 11px;
 
   border-radius: 8px;
-  border: 1px solid #333;
+  border: 1px solid var(--border);
 
-  background: #1a1a1a;
-  color: white;
+  background: var(--control-bg);
+  color: var(--text);
 
   outline: none;
 }
@@ -359,8 +385,8 @@ button {
   border-radius: 8px;
   border: none;
 
-  background: #fff;
-  color: #000;
+  background: var(--text);
+  color: var(--bg);
 
   font-weight: 700;
   font-size: 0.95rem;
@@ -378,10 +404,10 @@ button:disabled {
   display: inline-flex;
   gap: 6px;
   padding: 5px;
-  background: rgba(18, 18, 18, 0.96);
+  background: var(--menu-bg);
   border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 12px 28px var(--shadow);
   opacity: 0;
   transform: translate(-50%, 4px);
   transition: opacity 0.15s ease, transform 0.15s ease;
@@ -405,7 +431,7 @@ button:disabled {
 }
 
 #selectionToolbar button:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--menu-control-bg);
 }
 
 .profile-pic {
@@ -448,7 +474,7 @@ button:disabled {
   margin-top: 18px;
   padding: 16px;
 
-  background: #080808;
+  background: var(--panel-soft);
 
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -536,4 +562,7 @@ iframe {
   background: #22c55e;
   color: white;
   border-color: #22c55e;
+}
+#chatFrame {
+  background: var(--panel-soft);
 }

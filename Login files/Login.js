@@ -21,6 +21,11 @@ function initializeGoogle() {
     callback: async (response) => {
       if (response.error) {
         console.error(response);
+        document.getElementById("loginStatus").textContent =
+          response.error_description || "Google Sign-In was cancelled or could not be completed.";
+        const loginBtn = document.getElementById("loginBtn");
+        loginBtn.textContent = "Sign in with Google";
+        loginBtn.disabled = false;
         return;
       }
 
@@ -38,6 +43,10 @@ function initializeGoogle() {
           }
         );
 
+        if (!profileResponse.ok) {
+          throw new Error("Could not retrieve your Google profile.");
+        }
+
         const user = await profileResponse.json();
 
         localStorage.setItem("userName", user.name || "User");
@@ -50,6 +59,11 @@ function initializeGoogle() {
         window.location.href = "../index.html";
       } catch (err) {
         console.error(err);
+        document.getElementById("loginStatus").textContent =
+          "Sign-in failed. Please try again.";
+        const loginBtn = document.getElementById("loginBtn");
+        loginBtn.textContent = "Sign in with Google";
+        loginBtn.disabled = false;
       }
     },
   });
@@ -80,7 +94,9 @@ document.addEventListener("DOMContentLoaded", () => {
     loginStatus.textContent = "Opening Google Sign-In...";
 
       requestAnimationFrame(() => {
-      tokenClient.requestAccessToken();
+      // Ask Google to show consent so an older sign-in cannot reuse a token
+      // that was issued before the YouTube chat permission was approved.
+      tokenClient.requestAccessToken({ prompt: "consent" });
     });
   });
 

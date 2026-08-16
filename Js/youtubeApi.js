@@ -166,6 +166,10 @@ export async function sendMessage(liveChatId, message) {
 
   const data = await res.json();
 
+  if (data.error?.errors?.some((error) => error.reason === "insufficientPermissions")) {
+    throw new Error("Google needs permission to post in YouTube chat. Sign in again and approve the YouTube access request.");
+  }
+
   if (!res.ok) throw new Error(data.error?.message || "Send failed");
 
   return data;
