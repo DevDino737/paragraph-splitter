@@ -3,21 +3,22 @@
 }
 
 :root {
-  color-scheme: light dark;
-  --bg: #fff;
-  --panel: #f7f7f7;
-  --panel-soft: #ededed;
-  --text: #111;
-  --muted: #626262;
-  --border: #d4d4d4;
+  /* Keep the app's dark, low-glare appearance even when the OS is in light mode. */
+  color-scheme: dark;
+  --bg: #111315;
+  --panel: #1a1d20;
+  --panel-soft: #25292d;
+  --text: #f5f7fa;
+  --muted: #afb7c2;
+  --border: #353b42;
   --focus: #22c55e;
-  --navbar-bg: rgba(255, 255, 255, 0.9);
-  --control-bg: #fff;
-  --control-hover: #f0f0f0;
-  --menu-bg: rgba(255, 255, 255, 0.92);
-  --menu-control-bg: rgba(0, 0, 0, 0.05);
-  --menu-control-hover: rgba(0, 0, 0, 0.1);
-  --shadow: rgba(0, 0, 0, 0.18);
+  --navbar-bg: rgba(18, 21, 24, 0.92);
+  --control-bg: #24282d;
+  --control-hover: #30363d;
+  --menu-bg: rgba(31, 35, 40, 0.94);
+  --menu-control-bg: rgba(255, 255, 255, 0.08);
+  --menu-control-hover: rgba(255, 255, 255, 0.14);
+  --shadow: rgba(0, 0, 0, 0.4);
 }
 
 @media (prefers-color-scheme: dark) {

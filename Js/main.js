@@ -13,6 +13,7 @@ import { setCurrentLiveChatId, setCurrentParts } from "./state.js";
 import { showToast } from "./ui.js";
 
 const SEND_DELAY_MS = 1200;
+const DRAFT_STORAGE_KEY = "paragraphSplitterDraft";
 
 document.addEventListener("DOMContentLoaded", () => {
   const input = document.getElementById("paragraphInput");
@@ -40,6 +41,16 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentVideoId = null;
   let liveChatId = null;
 
+  // The Google access token expires after about an hour, but the user's work
+  // should survive the sign-in redirect. Keep only app draft data here, never
+  // credentials or profile information.
+  const savedDraft = readDraft();
+  input.value = savedDraft.paragraph || "";
+  navbarUrlInput.value = savedDraft.youtubeUrl || "";
+  toggleSplit.checked = savedDraft.showSplit ?? toggleSplit.checked;
+  toggleStream.checked = savedDraft.showStream ?? toggleStream.checked;
+  currentParts = Array.isArray(savedDraft.parts) ? savedDraft.parts : [];
+
   const savedProfilePic = localStorage.getItem("userPic");
   if (savedProfilePic && profilePic) {
     profilePic.src = savedProfilePic;
@@ -58,9 +69,12 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   updateSplitMode();
+  youtubeSection.hidden = !toggleStream.checked;
+  renderParts();
 
   toggleSplit.addEventListener("change", () => {
     updateSplitMode();
+    saveDraft();
   });
 
   function updateSplitMode() {
@@ -71,6 +85,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   toggleStream.addEventListener("change", () => {
     youtubeSection.hidden = !toggleStream.checked;
+    saveDraft();
+  });
+
+  input.addEventListener("input", () => {
+    // A changed paragraph makes any previously split result out of date.
+    currentParts = [];
+    output.innerHTML = "";
+    saveDraft();
   });
 
   splitBtn.addEventListener("click", async () => {
@@ -213,20 +235,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     currentParts = splitTextTightly(text);
     setCurrentParts(currentParts);
-
-    output.innerHTML = "";
-    currentParts.forEach((part) => {
-      const div = document.createElement("div");
-      div.className = "part";
-      div.textContent = part;
-      div.addEventListener("click", async () => {
-        await navigator.clipboard.writeText(part);
-        div.classList.add("copied");
-        setTimeout(() => div.classList.remove("copied"), 600);
-        showToast(toast, "Copied part.");
-      });
-      output.appendChild(div);
-    });
+    renderParts();
+    saveDraft();
 
     showToast(toast, `Split into ${currentParts.length} part(s).`);
     return true;
@@ -243,6 +253,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   navbarUrlInput.addEventListener("input", () => {
     loadStreamBtn.hidden = false;
+    saveDraft();
   });
 
   async function loadCurrentStream() {
@@ -316,7 +327,51 @@ document.addEventListener("DOMContentLoaded", () => {
       chatFrame.src = `https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${domain}`;
     }
   }
+
+  function renderParts() {
+    output.innerHTML = "";
+    currentParts.forEach((part) => {
+      const div = document.createElement("div");
+      div.className = "part";
+      div.textContent = part;
+      div.addEventListener("click", async () => {
+        await navigator.clipboard.writeText(part);
+        div.classList.add("copied");
+        setTimeout(() => div.classList.remove("copied"), 600);
+        showToast(toast, "Copied part.");
+      });
+      output.appendChild(div);
+    });
+  }
+
+  function saveDraft() {
+    try {
+      localStorage.setItem(
+        DRAFT_STORAGE_KEY,
+        JSON.stringify({
+          paragraph: input.value,
+          youtubeUrl: navbarUrlInput.value,
+          showSplit: toggleSplit.checked,
+          showStream: toggleStream.checked,
+          parts: currentParts,
+        }),
+      );
+    } catch (error) {
+      // Storage can be unavailable or full; the app remains usable either way.
+      console.warn("Could not save paragraph splitter draft.", error);
+    }
+  }
 });
+
+function readDraft() {
+  try {
+    const stored = localStorage.getItem(DRAFT_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch (error) {
+    console.warn("Could not restore paragraph splitter draft.", error);
+    return {};
+  }
+}
 
 function parseYouTubeVideoId(value) {
   const raw = value.trim();
