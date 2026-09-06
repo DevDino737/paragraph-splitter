@@ -1,7 +1,10 @@
 // Redirect to login if the user isn't signed in
 const accessToken = localStorage.getItem("accessToken");
+const tokenExpiresAt = Number(localStorage.getItem("tokenExpiresAt") || 0);
 
-if (!accessToken) {
+if (!accessToken || Date.now() >= tokenExpiresAt) {
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("tokenExpiresAt");
   window.location.replace("Login%20files/Login.html");
 }
 
@@ -23,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const loadStreamBtn = document.getElementById("loadStreamBtn");
   const menuBtn = document.getElementById("menuBtn");
   const dropdownMenu = document.getElementById("dropdownMenu");
+  const reauthBtn = document.getElementById("reauthBtn");
   const toggleSplit = document.getElementById("toggleSplit");
   const toggleStream = document.getElementById("toggleStream");
   const splitResults = document.getElementById("split-results");
@@ -36,6 +40,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const profilePic = document.getElementById("profilePic");
   const selectionToolbar = document.getElementById("selectionToolbar");
   const selectionSendBtn = selectionToolbar.querySelector("[data-action='send']");
+
+  reauthBtn?.addEventListener("click", () => {
+    // Remove only authentication data.
+    // Draft text and layout settings remain in localStorage.
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("tokenExpiresAt");
+
+    window.location.replace("Login%20files/Login.html");
+  });
 
   let currentParts = [];
   let currentVideoId = null;

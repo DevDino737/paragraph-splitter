@@ -156,6 +156,21 @@ body {
   font-weight: 500;
 }
 
+.menu-action {
+  width: calc(100% - 24px);
+  margin: 12px;
+  padding: 9px 12px;
+  color: var(--text);
+  background: var(--menu-control-bg);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.menu-action:hover {
+  background: var(--menu-control-hover);
+}
+
 .dropdown-content hr {
   border: none;
   border-top: 1px solid var(--border);

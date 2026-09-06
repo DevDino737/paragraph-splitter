@@ -32,6 +32,10 @@ function initializeGoogle() {
       const accessToken = response.access_token;
 
       localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem(
+        "tokenExpiresAt",
+        String(Date.now() + (response.expires_in || 3600) * 1000)
+      );
 
       try {
         const profileResponse = await fetch(
